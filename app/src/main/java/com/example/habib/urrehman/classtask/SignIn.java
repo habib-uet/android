@@ -2,9 +2,7 @@ package com.example.habib.urrehman.classtask;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -12,7 +10,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.habib.urrehman.classtask.api.RetrofitClient;
-import com.example.habib.urrehman.classtask.api.Users;
+import com.example.habib.urrehman.classtask.api.Student;
 
 import java.util.List;
 
@@ -24,6 +22,7 @@ public class SignIn extends AppCompatActivity {
     Button btSignIn;
     EditText etName, etPassword;
     String name, password;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,25 +37,8 @@ public class SignIn extends AppCompatActivity {
                 password = etPassword.getText().toString();
                 if (!(name.equals(""))) {
                     if (!password.equals("")) {
-                        SharedPreferences sh = getSharedPreferences("MySharedPref", Context.MODE_PRIVATE);
+                        getList(name, password);
 
-                        String nameGet = sh.getString("name", "");
-                        String passwGet = sh.getString("password", "");
-
-                        if (name.equals(nameGet)){
-                            if (password.equals(passwGet)){
-                                Toast.makeText(SignIn.this, "Sign In Successful 😊", Toast.LENGTH_SHORT).show();
-                                Intent intent = new Intent(SignIn.this, ApiActivity.class);
-                                intent.putExtra("Name",name);
-                                startActivity(intent);
-                            }
-                            else {
-                                Toast.makeText(SignIn.this, "Password mismatched", Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                        else {
-                            Toast.makeText(SignIn.this, "Name mismatched", Toast.LENGTH_SHORT).show();
-                        }
 
                     } else {
                         Toast.makeText(SignIn.this, "Password can not be empty", Toast.LENGTH_SHORT).show();
@@ -70,4 +52,48 @@ public class SignIn extends AppCompatActivity {
 
     }
 
+    private void getList(String name, String password) {
+
+        // below line is for displaying our progress bar.
+
+
+        // on below line we are creating a retrofit
+        // builder and passing our base url
+        RetrofitClient retrofitClient = new RetrofitClient();
+//        Call<Users> userDetail=retrofitClient.getUserService().getUsersDetail(1);
+        Call<List<Student>> call = retrofitClient.getUserService().getStudentByName(name);
+
+
+        // passing data from our text fields to our modal class.
+
+        // on below line we are executing our method.
+        call.enqueue(new Callback<List<Student>>() {
+            @Override
+            public void onResponse(Call<List<Student>> call, Response<List<Student>> response) {
+                List<Student> list = response.body();
+                Toast.makeText(SignIn.this, "Name Found", Toast.LENGTH_SHORT).show();
+                if (list.size() != 0) {
+                    if (list.get(0).getPassword().equals(password)) {
+                        Toast.makeText(SignIn.this, "successfull", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(SignIn.this, StudentDetails.class);
+                        startActivity(intent);
+                    }
+                    else {
+                        Toast.makeText(SignIn.this, "password mismatched", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                else{
+                    Toast.makeText(SignIn.this, "user name mismatched", Toast.LENGTH_SHORT).show();
+                }
+
+            }
+
+            @Override
+            public void onFailure(Call<List<Student>> call, Throwable t) {
+
+                Toast.makeText(SignIn.this, "Error Found " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+    }
 }
